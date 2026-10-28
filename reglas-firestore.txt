@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // CAMBIÁ ESTOS TRES CORREOS por los de ustedes (en minúsculas)
+    function ok() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['correo1@gmail.com','correo2@gmail.com','correo3@gmail.com'];
+    }
+    match /comparaciones/{id} {
+      allow read: if ok();
+      allow create: if ok() && request.resource.data.autorUid == request.auth.uid;
+      allow update: if ok() && resource.data.autorUid == request.auth.uid
+                    && request.resource.data.autorUid == request.auth.uid;
+      allow delete: if ok() && resource.data.autorUid == request.auth.uid;
+    }
+    match /imagenes/{id} {
+      allow read: if ok();
+      allow create: if ok() && request.resource.data.autorUid == request.auth.uid;
+      allow update, delete: if ok() && resource.data.autorUid == request.auth.uid;
+    }
+    match /rotulos/{id} {
+      allow read, write: if ok();
+    }
+  }
+}

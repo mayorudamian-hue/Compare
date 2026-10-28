@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f6f5e"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png">
+<title>Mis ilustraciones</title>
+<style>
+:root{--bg:#f6f5f1;--cd:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#2f6f5e;--ax:#fff;--bd:#e2e0d8;--rd:#b3261e;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#161715;--cd:#222320;--tx:#ece9e2;--mu:#a3a29b;--ac:#6fc3a9;--ax:#10211c;--bd:#34352f;--rd:#f2877f;color-scheme:dark}}
+body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,sans-serif}
+[hidden]{display:none!important}
+header{position:sticky;top:0;background:var(--bg);padding:12px 14px 6px;z-index:5}
+h1{font-size:20px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+#st{font-size:12px;font-weight:400;color:var(--mu);cursor:pointer}
+input,textarea,button{font:inherit;color:inherit}
+input[type=search],input[type=text],input[type=date],textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--cd)}
+textarea{min-height:140px}
+#chips,#chips2{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px}
+.chip{flex:none;border:1px solid var(--bd);background:var(--cd);border-radius:20px;padding:6px 14px;cursor:pointer}
+.chip.on{background:var(--ac);color:var(--ax);border-color:var(--ac)}.chip.rc{border-width:2px}
+#list{padding:6px 14px 96px;display:grid;gap:10px}
+.card{display:flex;gap:12px;background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:10px;cursor:pointer;overflow:hidden}
+.th{flex:none;width:72px;height:72px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.th img{width:100%;height:100%;object-fit:cover}.cb{min-width:0}.cb b{display:block;overflow-wrap:anywhere}
+.mu{color:var(--mu);font-size:13px}
+.sn{font-size:14px;color:var(--mu);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:var(--ac);color:var(--ax);font-size:32px;box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer}
+.pg{padding:14px;max-width:640px;margin:0 auto}.pg label{display:block;margin:14px 0 5px;font-size:14px;color:var(--mu)}
+.bt{border:1px solid var(--bd);background:var(--cd);border-radius:12px;padding:11px 16px;cursor:pointer}
+.bt.p{background:var(--ac);color:var(--ax);border-color:var(--ac)}.bt.r{color:var(--rd)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.rt{display:inline-block;font-size:12px;padding:1px 10px;border-radius:10px;color:#fff;margin:0 6px 3px 0}
+.sw{width:32px;height:32px;border-radius:50%;border:3px solid transparent;padding:0;cursor:pointer}.sw.on{border-color:var(--tx)}
+#pv,#di{display:block;max-width:100%;max-height:60vh;border-radius:12px;margin:10px 0}
+#dt{white-space:pre-wrap;overflow-wrap:anywhere}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 16px;border-radius:20px;font-size:14px}
+</style></head><body>
+<div id="login" class="pg" style="text-align:center;padding-top:20vh"><h1 style="justify-content:center">Mis ilustraciones</h1><p class="mu" id="lm">Entrá con tu cuenta de Google.</p><button class="bt p" id="b-in">Entrar con Google</button></div>
+<div id="main" hidden><header><h1><span>Mis ilustraciones</span><span id="st" title="Tocá para salir"></span></h1>
+<input type="search" id="q" placeholder="Buscar por título, tema, rótulo o detalles"><div id="chips"></div><div id="chips2"></div>
+<div class="row" style="margin-top:6px"><button class="chip" id="b-im">⬆ Importar respaldo</button><input type="file" id="b-f" hidden></div></header>
+<div id="list"></div><button id="fab" aria-label="Agregar">+</button></div>
+<div id="det" class="pg" hidden><button class="bt" id="d-back">← Volver</button><h2 id="dh" style="margin:14px 0 2px;overflow-wrap:anywhere"></h2>
+<div id="dr"></div><div class="mu" id="dm"></div><img id="di" alt="" hidden><p id="dt"></p>
+<div class="row"><button class="bt p" id="d-sh">Compartir</button><button class="bt" id="d-ed">Editar</button><button class="bt r" id="d-del">Borrar</button></div></div>
+<div id="frm" class="pg" hidden><button class="bt" id="f-back">← Cancelar</button><h2 id="fh" style="margin:14px 0 0">Nueva comparación</h2>
+<label for="f-t">Título</label><input type="text" id="f-t" maxlength="150">
+<label for="f-tm">Tema</label><input type="text" id="f-tm" list="tl" maxlength="60"><datalist id="tl"></datalist>
+<label>Rótulos (podés elegir varios)</label><div id="rsel" class="row" style="margin-top:0"></div>
+<label for="f-r">Crear un rótulo nuevo (nombre y color)</label><input type="text" id="f-r" maxlength="40" placeholder="Ej.: Biblia">
+<div id="sw" class="row" style="margin-top:8px"></div><div class="row" style="margin-top:8px"><button class="bt" id="f-ra">Agregar rótulo</button></div>
+<label for="f-d">Detalles</label><textarea id="f-d"></textarea><label for="f-f">Fecha</label><input type="date" id="f-f">
+<label>Imagen (se comparte con los demás)</label><input type="file" id="f-i" accept="image/*" hidden><img id="pv" alt="" hidden>
+<div class="row" style="margin-top:6px"><button class="bt" id="f-pick">Subir imagen</button><button class="bt r" id="f-rm" hidden>Quitar imagen</button></div>
+<div class="row"><button class="bt p" id="f-ok">Guardar</button></div></div>
+<div id="toast" hidden></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import{initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,getDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+/* === PEGÁ ACÁ LOS DATOS DE TU PROYECTO FIREBASE (ver LEEME.md) === */
+const CFG={apiKey:"PEGAR",authDomain:"PEGAR",projectId:"PEGAR",appId:"PEGAR"};
+const app=initializeApp(CFG),auth=getAuth(app);
+const db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+const $=s=>document.querySelector(s),el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmt=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}):'';
+const PAL=['#c0392b','#d35400','#9a7d0a','#1e8449','#117a8b','#2e5fa3','#6c3fa0','#a23b72','#5f6b73'];
+const slug=n=>'r_'+encodeURIComponent(norm(n));
+let me=null,items=[],rm=new Map(),q='',tp='',rt='',cur=null,pend=null,quitar=false,arm=false,sel=[],rc=PAL[0],tt;
+const colorDe=n=>(rm.get(slug(n))||{}).c||'';
+const badge=i=>{const d=el('div');(i.rotulos||[]).forEach(n=>{const s=el('span','rt',n);s.style.background=colorDe(n)||PAL[0];d.append(s)});return d};
+const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>e.hidden=true,2600)};
+const vista=v=>{['main','det','frm'].forEach(x=>$('#'+x).hidden=x!==v);scrollTo(0,0)};
+/* imágenes: se achican y se guardan en la base de datos */
+const load=src=>new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=src});
+const comp=(im,max,ql)=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',ql)};
+async function achicar(src){const im=await load(src);let m=1000,ql=.8,u=comp(im,m,ql);while(u.length>300000&&(ql>.45||m>500)){if(ql>.45)ql-=.1;else m*=.8;u=comp(im,m,ql)}return{full:u,mini:comp(im,120,.6)}}
+const aBlob=u=>{const t=atob(u.split(',')[1]),a=new Uint8Array(t.length);for(let i=0;i<t.length;i++)a[i]=t.charCodeAt(i);return new Blob([a],{type:'image/jpeg'})};
+/* sesión */
+$('#b-in').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>$('#lm').textContent='No se pudo entrar: '+e.code);
+$('#st').onclick=()=>{if(confirm('¿Cerrar sesión?'))signOut(auth)};
+let subs=[];
+onAuthStateChanged(auth,u=>{
+  subs.forEach(f=>f());subs=[];me=u;$('#login').hidden=!!u;
+  if(!u){$('#main').hidden=true;$('#det').hidden=true;$('#frm').hidden=true;return}
+  $('#st').textContent='Sesión: '+(u.displayName||u.email).split(' ')[0]+' · salir';vista('main');
+  const bad=e=>{if(e.code==='permission-denied'){signOut(auth);$('#lm').textContent='Tu cuenta ('+u.email+') no está autorizada.'}};
+  subs.push(onSnapshot(collection(db,'comparaciones'),s=>{items=s.docs.map(d=>({...d.data(),id:d.id}));render()},bad));
+  subs.push(onSnapshot(collection(db,'rotulos'),s=>{rm=new Map(s.docs.map(d=>[d.id,d.data()]));render()},bad));
+});
+function render(){
+  const ts=[...new Set(items.map(i=>i.tema).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  if(tp&&!ts.includes(tp))tp='';
+  const ch=$('#chips');ch.textContent='';
+  [['','Todos'],...ts.map(t=>[t,t])].forEach(([v,l])=>{const b=el('button','chip'+(tp===v?' on':''),l);b.onclick=()=>{tp=v;render()};ch.append(b)});
+  $('#tl').innerHTML=ts.map(t=>'<option value="'+esc(t)+'">').join('');
+  const usados=[...new Set(items.flatMap(i=>i.rotulos||[]))].sort((a,b)=>a.localeCompare(b,'es'));
+  if(rt&&!usados.includes(rt))rt='';
+  const c2=$('#chips2');c2.textContent='';
+  if(usados.length)[['','Todos los rótulos'],...usados.map(n=>[n,n])].forEach(([v,l])=>{const b=el('button','chip rc'+(rt===v?' on':''),l),c=v?colorDe(v)||PAL[0]:'';if(c){b.style.borderColor=c;if(rt===v){b.style.background=c;b.style.color='#fff'}}b.onclick=()=>{rt=v;render()};c2.append(b)});
+  const n=norm(q);
+  const ls=items.filter(i=>(!tp||i.tema===tp)&&(!rt||(i.rotulos||[]).includes(rt))&&(!n||norm([i.titulo,i.detalles,i.tema,...(i.rotulos||[]),i.autor].join(' ')).includes(n))).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const L=$('#list');L.textContent='';
+  if(!ls.length){L.append(el('p','mu',items.length?'No hay resultados.':'Todavía no hay nada guardado. Tocá + para agregar la primera.'));return}
+  ls.forEach(i=>{const c=el('div','card'),th=el('div','th','🖼'),cb=el('div','cb');
+    if(i.mini){const m=el('img');m.src=i.mini;th.textContent='';th.append(m)}
+    if((i.rotulos||[]).length)cb.append(badge(i));
+    cb.append(el('b',0,i.titulo),el('span','mu',[i.tema,fmt(i.fecha),i.autor&&'por '+i.autor].filter(Boolean).join(' · ')),el('div','sn',i.detalles||''));
+    c.append(th,cb);c.onclick=()=>abrir(i.id);L.append(c)});
+}
+$('#q').oninput=e=>{q=e.target.value;render()};
+const mia=i=>me&&i.autorUid===me.uid;
+async function abrir(id){
+  const i=items.find(x=>x.id===id);if(!i)return vista('main');
+  cur=id;arm=false;$('#d-del').textContent='Borrar';$('#d-ed').hidden=$('#d-del').hidden=!mia(i);
+  $('#dh').textContent=i.titulo;$('#dm').textContent=[i.tema,fmt(i.fecha),i.autor&&'por '+i.autor].filter(Boolean).join(' · ');
+  $('#dt').textContent=i.detalles||'';const dr=$('#dr');dr.textContent='';dr.append(badge(i));
+  const im=$('#di');im.hidden=true;vista('det');
+  if(i.tieneImg){try{const s=await getDoc(doc(db,'imagenes',id));if(s.exists()&&cur===id){im.src=s.data().data;im.hidden=false}}catch(e){}}
+}
+$('#d-back').onclick=()=>vista('main');
+$('#d-ed').onclick=()=>form(cur);
+$('#d-del').onclick=async()=>{
+  if(!arm){arm=true;$('#d-del').textContent='Tocá otra vez para borrar';return}
+  try{await deleteDoc(doc(db,'comparaciones',cur));await deleteDoc(doc(db,'imagenes',cur)).catch(()=>{});vista('main')}catch(e){toast('No se pudo borrar')}
+};
+$('#d-sh').onclick=async()=>{
+  const i=items.find(x=>x.id===cur),txt=[i.titulo,[i.tema,fmt(i.fecha)].filter(Boolean).join(' · '),'',i.detalles||''].join('\n').trim();
+  try{let f=[];if(i.tieneImg){const s=await getDoc(doc(db,'imagenes',cur));if(s.exists())f=[new File([aBlob(s.data().data)],'imagen.jpg',{type:'image/jpeg'})]}
+    if(f.length&&navigator.canShare&&navigator.canShare({files:f}))await navigator.share({title:i.titulo,text:txt,files:f});
+    else if(navigator.share)await navigator.share({title:i.titulo,text:txt});
+    else{await navigator.clipboard.writeText(txt);toast('Texto copiado')}}catch(e){}
+};
+/* formulario */
+function pvShow(u){const p=$('#pv');if(u){p.src=u;p.hidden=false}else p.hidden=true;$('#f-rm').hidden=!u;$('#f-pick').textContent=u?'Cambiar imagen':'Subir imagen'}
+function swatches(){const s=$('#sw');s.textContent='';PAL.forEach(c=>{const b=el('button','sw'+(rc===c?' on':''));b.style.background=c;b.setAttribute('aria-label','Color');b.onclick=()=>{rc=c;swatches()};s.append(b)})}
+function rsel(){const s=$('#rsel');s.textContent='';const todos=new Map([...rm.values()].map(r=>[r.n,r.c]));sel.forEach(r=>todos.set(r.n,r.c));
+  if(!todos.size)s.append(el('span','mu','Todavía no hay rótulos. Creá el primero abajo.'));
+  [...todos.entries()].sort((a,b)=>a[0].localeCompare(b[0],'es')).forEach(([n,c])=>{const on=sel.some(r=>r.n===n),b=el('button','chip rc'+(on?' on':''),n);b.style.borderColor=c;if(on){b.style.background=c;b.style.color='#fff'}
+    b.onclick=()=>{sel=on?sel.filter(r=>r.n!==n):[...sel,{n,c}];rsel()};s.append(b)})}
+function agregarR(){const n=$('#f-r').value.trim();if(!n)return;
+  const ex=[...rm.values()].map(r=>r.n).concat(sel.map(r=>r.n)).find(x=>norm(x)===norm(n))||n;
+  sel=sel.filter(r=>r.n!==ex);sel.push({n:ex,c:rc});$('#f-r').value='';rc=PAL[(PAL.indexOf(rc)+1)%PAL.length];swatches();rsel()}
+$('#f-ra').onclick=agregarR;$('#f-r').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();agregarR()}};
+$('#f-r').oninput=e=>{const c=[...rm.values()].find(r=>norm(r.n)===norm(e.target.value.trim()));if(c){rc=c.c;swatches()}};
+async function form(id){
+  cur=id||null;pend=null;quitar=false;const i=id?items.find(x=>x.id===id):null;
+  $('#fh').textContent=i?'Editar comparación':'Nueva comparación';
+  $('#f-t').value=i?i.titulo:'';$('#f-tm').value=i?i.tema||'':tp;$('#f-d').value=i?i.detalles||'':'';$('#f-f').value=i?i.fecha||hoy():hoy();
+  sel=i?(i.rotulos||[]).map(n=>({n,c:colorDe(n)||PAL[0]})):(rt?[{n:rt,c:colorDe(rt)||PAL[0]}]:[]);
+  $('#f-r').value='';rc=PAL[0];swatches();rsel();pvShow(i&&i.mini?i.mini:null);vista('frm');
+}
+$('#fab').onclick=()=>form();
+$('#f-back').onclick=()=>cur&&items.some(i=>i.id===cur)?abrir(cur):vista('main');
+$('#f-pick').onclick=()=>$('#f-i').click();
+$('#f-i').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{pend=await achicar(URL.createObjectURL(f));quitar=false;pvShow(pend.mini)}catch(x){toast('No se pudo leer la imagen')}};
+$('#f-rm').onclick=()=>{pend=null;quitar=true;pvShow(null)};
+$('#f-ok').onclick=async()=>{try{
+  agregarR();const t=$('#f-t').value.trim();if(!t){$('#f-t').focus();return}
+  const old=cur?items.find(i=>i.id===cur):null,id=old?old.id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const o={titulo:t,tema:$('#f-tm').value.trim(),detalles:$('#f-d').value.trim(),fecha:$('#f-f').value||hoy(),rotulos:sel.map(r=>r.n),
+    autorUid:old?old.autorUid:me.uid,autor:old?old.autor:(me.displayName||me.email).split(' ')[0],
+    mini:pend?pend.mini:quitar?'':(old&&old.mini)||'',tieneImg:pend?true:quitar?false:!!(old&&old.tieneImg),upd:Date.now()};
+  for(const r of sel){const k=rm.get(slug(r.n));if(!k||k.c!==r.c)await setDoc(doc(db,'rotulos',slug(r.n)),{n:r.n,c:r.c})}
+  if(pend)await setDoc(doc(db,'imagenes',id),{data:pend.full,autorUid:o.autorUid});else if(quitar)await deleteDoc(doc(db,'imagenes',id));
+  await setDoc(doc(db,'comparaciones',id),o);cur=id;toast('Guardado');abrir(id);
+}catch(e){toast('No se pudo guardar: '+(e.code||e.message))}};
+/* importar el respaldo de la versión anterior */
+$('#b-im').onclick=()=>$('#b-f').click();
+$('#b-f').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;let n=0;
+  try{const j=JSON.parse(await f.text());
+    for(const x of j.items||[]){if(!x||!x.id||!x.titulo)continue;
+      const rs=Array.isArray(x.rotulos)?x.rotulos:(x.rotulo?[{n:x.rotulo,c:x.color||PAL[0]}]:[]),id='m_'+me.uid.slice(0,5)+'_'+x.id;
+      for(const r of rs)if(!rm.has(slug(r.n)))await setDoc(doc(db,'rotulos',slug(r.n)),{n:r.n,c:r.c||PAL[0]});
+      let im=null;if(x.imgData)try{im=await achicar(x.imgData)}catch(z){}
+      if(im)await setDoc(doc(db,'imagenes',id),{data:im.full,autorUid:me.uid});
+      await setDoc(doc(db,'comparaciones',id),{titulo:x.titulo,tema:x.tema||'',detalles:x.detalles||'',fecha:x.fecha||hoy(),rotulos:rs.map(r=>r.n),autorUid:me.uid,autor:(me.displayName||me.email).split(' ')[0],mini:im?im.mini:'',tieneImg:!!im,upd:Date.now()});n++}
+    toast(n+' importadas')}catch(x){toast('Ese archivo no es un respaldo de la app')}};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
