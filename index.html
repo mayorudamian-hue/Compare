@@ -29,6 +29,7 @@ textarea{min-height:140px}
 .bt.p{background:var(--ac);color:var(--ax);border-color:var(--ac)}.bt.r{color:var(--rd)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 .rt{display:inline-block;font-size:12px;padding:1px 10px;border-radius:10px;color:#fff;margin:0 6px 3px 0}
+.star{flex:none;align-self:flex-start;border:0;background:none;font-size:20px;color:var(--mu);cursor:pointer;padding:4px}.star.on{color:#d4a017}
 .sw{width:32px;height:32px;border-radius:50%;border:3px solid transparent;padding:0;cursor:pointer}.sw.on{border-color:var(--tx)}
 #pv,#di{display:block;max-width:100%;max-height:60vh;border-radius:12px;margin:10px 0}
 #dt{white-space:pre-wrap;overflow-wrap:anywhere}
@@ -41,7 +42,7 @@ textarea{min-height:140px}
 <div id="list"></div><button id="fab" aria-label="Agregar">+</button></div>
 <div id="det" class="pg" hidden><button class="bt" id="d-back">← Volver</button><h2 id="dh" style="margin:14px 0 2px;overflow-wrap:anywhere"></h2>
 <div id="dr"></div><div class="mu" id="dm"></div><img id="di" alt="" hidden><p id="dt"></p>
-<div class="row"><button class="bt p" id="d-sh">Compartir</button><button class="bt" id="d-ed">Editar</button><button class="bt r" id="d-del">Borrar</button></div></div>
+<div class="row"><button class="bt p" id="d-sh">Compartir</button><button class="bt" id="d-fav">☆ Marcar como favorita</button><button class="bt" id="d-ed">Editar</button><button class="bt r" id="d-del">Borrar</button></div></div>
 <div id="frm" class="pg" hidden><button class="bt" id="f-back">← Cancelar</button><h2 id="fh" style="margin:14px 0 0">Nueva comparación</h2>
 <label for="f-t">Título</label><input type="text" id="f-t" maxlength="150">
 <label for="f-tm">Tema</label><input type="text" id="f-tm" list="tl" maxlength="60"><datalist id="tl"></datalist>
@@ -56,9 +57,9 @@ textarea{min-height:140px}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import{initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,getDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import{initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,getDoc,onSnapshot,arrayUnion,arrayRemove}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 /* === PEGÁ ACÁ LOS DATOS DE TU PROYECTO FIREBASE (ver LEEME.md) === */
-const CFG={apiKey:"AIzaSyAwi5yXBH4tYY2jW1XScUJpMEYyw3DxkSw",authDomain:"compare-8e3e9.firebaseapp.com",projectId:"compare-8e3e9",appId:"1:445366400129:web:ce45388eecf0e165764980"};
+const CFG={apiKey:"PEGAR",authDomain:"PEGAR",projectId:"PEGAR",appId:"PEGAR"};
 const app=initializeApp(CFG),auth=getAuth(app);
 const db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
 const $=s=>document.querySelector(s),el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
@@ -67,8 +68,13 @@ const norm=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCas
 const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const fmt=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}):'';
 const PAL=['#c0392b','#d35400','#9a7d0a','#1e8449','#117a8b','#2e5fa3','#6c3fa0','#a23b72','#5f6b73'];
+const esFav=id=>!!me&&fv.has(me.uid)&&fv.get(me.uid).has(id);
+const nFav=id=>[...fv.values()].filter(x=>x.has(id)).length;
+const fvBtn=()=>{$('#d-fav').textContent=esFav(cur)?'★ Quitar de favoritas':'☆ Marcar como favorita'};
+function toggleFav(id){const on=esFav(id),x=new Set(fv.get(me.uid)||[]);on?x.delete(id):x.add(id);fv.set(me.uid,x);render();if(!$('#det').hidden)fvBtn();
+  setDoc(doc(db,'favoritos',me.uid),{ids:on?arrayRemove(id):arrayUnion(id)},{merge:true}).catch(()=>toast('No se pudo guardar el favorito'))}
 const slug=n=>'r_'+encodeURIComponent(norm(n));
-let me=null,items=[],rm=new Map(),q='',tp='',rt='',cur=null,pend=null,quitar=false,arm=false,sel=[],rc=PAL[0],tt;
+let me=null,items=[],rm=new Map(),fv=new Map(),sf=false,q='',tp='',rt='',cur=null,pend=null,quitar=false,arm=false,sel=[],rc=PAL[0],tt;
 const colorDe=n=>(rm.get(slug(n))||{}).c||'';
 const badge=i=>{const d=el('div');(i.rotulos||[]).forEach(n=>{const s=el('span','rt',n);s.style.background=colorDe(n)||PAL[0];d.append(s)});return d};
 const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>e.hidden=true,2600)};
@@ -88,6 +94,7 @@ onAuthStateChanged(auth,u=>{
   $('#st').textContent='Sesión: '+(u.displayName||u.email).split(' ')[0]+' · salir';vista('main');
   const bad=e=>{if(e.code==='permission-denied'){signOut(auth);$('#lm').textContent='Tu cuenta ('+u.email+') no está autorizada.'}};
   subs.push(onSnapshot(collection(db,'comparaciones'),s=>{items=s.docs.map(d=>({...d.data(),id:d.id}));render()},bad));
+  subs.push(onSnapshot(collection(db,'favoritos'),s=>{fv=new Map(s.docs.map(d=>[d.id,new Set(d.data().ids||[])]));render()},bad));
   subs.push(onSnapshot(collection(db,'rotulos'),s=>{rm=new Map(s.docs.map(d=>[d.id,d.data()]));render()},bad));
 });
 function render(){
@@ -95,20 +102,22 @@ function render(){
   if(tp&&!ts.includes(tp))tp='';
   const ch=$('#chips');ch.textContent='';
   [['','Todos'],...ts.map(t=>[t,t])].forEach(([v,l])=>{const b=el('button','chip'+(tp===v?' on':''),l);b.onclick=()=>{tp=v;render()};ch.append(b)});
+  const fb=el('button','chip'+(sf?' on':''),'★ Favoritas');fb.onclick=()=>{sf=!sf;render()};ch.prepend(fb);
   $('#tl').innerHTML=ts.map(t=>'<option value="'+esc(t)+'">').join('');
   const usados=[...new Set(items.flatMap(i=>i.rotulos||[]))].sort((a,b)=>a.localeCompare(b,'es'));
   if(rt&&!usados.includes(rt))rt='';
   const c2=$('#chips2');c2.textContent='';
   if(usados.length)[['','Todos los rótulos'],...usados.map(n=>[n,n])].forEach(([v,l])=>{const b=el('button','chip rc'+(rt===v?' on':''),l),c=v?colorDe(v)||PAL[0]:'';if(c){b.style.borderColor=c;if(rt===v){b.style.background=c;b.style.color='#fff'}}b.onclick=()=>{rt=v;render()};c2.append(b)});
   const n=norm(q);
-  const ls=items.filter(i=>(!tp||i.tema===tp)&&(!rt||(i.rotulos||[]).includes(rt))&&(!n||norm([i.titulo,i.detalles,i.tema,...(i.rotulos||[]),i.autor].join(' ')).includes(n))).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const ls=items.filter(i=>(!tp||i.tema===tp)&&(!rt||(i.rotulos||[]).includes(rt))&&(!n||norm([i.titulo,i.detalles,i.tema,...(i.rotulos||[]),i.autor].join(' ')).includes(n))).filter(i=>!sf||esFav(i.id)).sort((a,b)=>(esFav(b.id)-esFav(a.id))||(b.fecha||'').localeCompare(a.fecha||''));
   const L=$('#list');L.textContent='';
-  if(!ls.length){L.append(el('p','mu',items.length?'No hay resultados.':'Todavía no hay nada guardado. Tocá + para agregar la primera.'));return}
+  if(!ls.length){L.append(el('p','mu',items.length?(sf?'Todavía no marcaste favoritas. Tocá la estrella de una comparación.':'No hay resultados.'):'Todavía no hay nada guardado. Tocá + para agregar la primera.'));return}
   ls.forEach(i=>{const c=el('div','card'),th=el('div','th','🖼'),cb=el('div','cb');
     if(i.mini){const m=el('img');m.src=i.mini;th.textContent='';th.append(m)}
     if((i.rotulos||[]).length)cb.append(badge(i));
     cb.append(el('b',0,i.titulo),el('span','mu',[i.tema,fmt(i.fecha),i.autor&&'por '+i.autor].filter(Boolean).join(' · ')),el('div','sn',i.detalles||''));
-    c.append(th,cb);c.onclick=()=>abrir(i.id);L.append(c)});
+    const f=esFav(i.id),k=nFav(i.id),sb=el('button','star'+(f?' on':''),(f?'★':'☆')+(k?' '+k:''));sb.setAttribute('aria-label','Favorita');sb.onclick=e=>{e.stopPropagation();toggleFav(i.id)};
+    c.append(th,cb,sb);c.onclick=()=>abrir(i.id);L.append(c)});
 }
 $('#q').oninput=e=>{q=e.target.value;render()};
 const mia=i=>me&&i.autorUid===me.uid;
@@ -117,11 +126,12 @@ async function abrir(id){
   cur=id;arm=false;$('#d-del').textContent='Borrar';$('#d-ed').hidden=$('#d-del').hidden=!mia(i);
   $('#dh').textContent=i.titulo;$('#dm').textContent=[i.tema,fmt(i.fecha),i.autor&&'por '+i.autor].filter(Boolean).join(' · ');
   $('#dt').textContent=i.detalles||'';const dr=$('#dr');dr.textContent='';dr.append(badge(i));
-  const im=$('#di');im.hidden=true;vista('det');
+  fvBtn();const im=$('#di');im.hidden=true;vista('det');
   if(i.tieneImg){try{const s=await getDoc(doc(db,'imagenes',id));if(s.exists()&&cur===id){im.src=s.data().data;im.hidden=false}}catch(e){}}
 }
 $('#d-back').onclick=()=>vista('main');
 $('#d-ed').onclick=()=>form(cur);
+$('#d-fav').onclick=()=>toggleFav(cur);
 $('#d-del').onclick=async()=>{
   if(!arm){arm=true;$('#d-del').textContent='Tocá otra vez para borrar';return}
   try{await deleteDoc(doc(db,'comparaciones',cur));await deleteDoc(doc(db,'imagenes',cur)).catch(()=>{});vista('main')}catch(e){toast('No se pudo borrar')}
