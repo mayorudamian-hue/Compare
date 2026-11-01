@@ -124,7 +124,7 @@ $('#q').oninput=e=>{q=e.target.value;render()};
 const mia=i=>me&&i.autorUid===me.uid;
 async function abrir(id){
   const i=items.find(x=>x.id===id);if(!i)return vista('main');
-  cur=id;arm=false;$('#d-del').textContent='Borrar';$('#d-ed').hidden=$('#d-del').hidden=!mia(i);
+  cur=id;arm=false;$('#d-del').textContent='Borrar';$('#d-ed').hidden=false;$('#d-del').hidden=!mia(i);
   $('#dh').textContent=i.titulo;$('#dm').textContent=[i.tema,fmt(i.fecha),i.autor&&'por '+i.autor].filter(Boolean).join(' · ');
   $('#dt').textContent=i.detalles||'';const ds=$('#ds');ds.textContent='';ds.hidden=!i.fuente;if(i.fuente){ds.append('Fuente: ');linkear(i.fuente).forEach(x=>ds.append(x))}history.replaceState(null,'','#'+id);const dr=$('#dr');dr.textContent='';dr.append(badge(i));
   fvBtn();const im=$('#di');im.hidden=true;vista('det');
