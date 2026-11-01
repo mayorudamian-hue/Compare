@@ -41,7 +41,7 @@ textarea{min-height:140px}
 <div class="row" style="margin-top:6px"><button class="chip" id="b-im">⬆ Importar respaldo</button><input type="file" id="b-f" hidden></div></header>
 <div id="list"></div><button id="fab" aria-label="Agregar">+</button></div>
 <div id="det" class="pg" hidden><button class="bt" id="d-back">← Volver</button><h2 id="dh" style="margin:14px 0 2px;overflow-wrap:anywhere"></h2>
-<div id="dr"></div><div class="mu" id="dm"></div><img id="di" alt="" hidden><p id="dt"></p>
+<div id="dr"></div><div class="mu" id="dm"></div><img id="di" alt="" hidden><p id="dt"></p><p id="ds" hidden></p>
 <div class="row"><button class="bt p" id="d-sh">Compartir</button><button class="bt" id="d-fav">☆ Marcar como favorita</button><button class="bt" id="d-ed">Editar</button><button class="bt r" id="d-del">Borrar</button></div></div>
 <div id="frm" class="pg" hidden><button class="bt" id="f-back">← Cancelar</button><h2 id="fh" style="margin:14px 0 0">Nueva comparación</h2>
 <label for="f-t">Título</label><input type="text" id="f-t" maxlength="150">
@@ -49,7 +49,7 @@ textarea{min-height:140px}
 <label>Rótulos (podés elegir varios)</label><div id="rsel" class="row" style="margin-top:0"></div>
 <label for="f-r">Crear un rótulo nuevo (nombre y color)</label><input type="text" id="f-r" maxlength="40" placeholder="Ej.: Biblia">
 <div id="sw" class="row" style="margin-top:8px"></div><div class="row" style="margin-top:8px"><button class="bt" id="f-ra">Agregar rótulo</button></div>
-<label for="f-d">Detalles</label><textarea id="f-d"></textarea><label for="f-f">Fecha</label><input type="date" id="f-f">
+<label for="f-d">Detalles</label><textarea id="f-d"></textarea><label for="f-s">Fuente o referencia (opcional)</label><input type="text" id="f-s" maxlength="300" placeholder="Ej.: publicación, página o enlace"><label for="f-f">Fecha</label><input type="date" id="f-f">
 <label>Imagen (se comparte con los demás)</label><input type="file" id="f-i" accept="image/*" hidden><img id="pv" alt="" hidden>
 <div class="row" style="margin-top:6px"><button class="bt" id="f-pick">Subir imagen</button><button class="bt r" id="f-rm" hidden>Quitar imagen</button></div>
 <div class="row"><button class="bt p" id="f-ok">Guardar</button></div></div>
@@ -67,6 +67,8 @@ const norm=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCas
 const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const fmt=f=>f?new Date(f+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'}):'';
 const PAL=['#c0392b','#d35400','#9a7d0a','#1e8449','#117a8b','#2e5fa3','#6c3fa0','#a23b72','#5f6b73'];
+let pendH=decodeURIComponent(location.hash.slice(1));
+const linkear=t=>t.split(/(https?:\/\/[^\s]+)/g).map(x=>{if(/^https?:\/\//.test(x)){const a=el('a',0,x);a.href=x;a.target='_blank';a.rel='noopener';a.style.color='var(--ac)';a.style.overflowWrap='anywhere';return a}return document.createTextNode(x)});
 const esFav=id=>!!me&&fv.has(me.uid)&&fv.get(me.uid).has(id);
 const nFav=id=>[...fv.values()].filter(x=>x.has(id)).length;
 const fvBtn=()=>{$('#d-fav').textContent=esFav(cur)?'★ Quitar de favoritas':'☆ Marcar como favorita'};
@@ -92,7 +94,7 @@ onAuthStateChanged(auth,u=>{
   if(!u){$('#main').hidden=true;$('#det').hidden=true;$('#frm').hidden=true;return}
   $('#st').textContent='Sesión: '+(u.displayName||u.email).split(' ')[0]+' · salir';vista('main');
   const bad=e=>{if(e.code==='permission-denied'){signOut(auth);$('#lm').textContent='Tu cuenta ('+u.email+') no está autorizada.'}};
-  subs.push(onSnapshot(collection(db,'comparaciones'),s=>{items=s.docs.map(d=>({...d.data(),id:d.id}));render()},bad));
+  subs.push(onSnapshot(collection(db,'comparaciones'),s=>{items=s.docs.map(d=>({...d.data(),id:d.id}));render();if(pendH&&items.some(i=>i.id===pendH)){const h=pendH;pendH='';abrir(h)}},bad));
   subs.push(onSnapshot(collection(db,'favoritos'),s=>{fv=new Map(s.docs.map(d=>[d.id,new Set(d.data().ids||[])]));render()},bad));
   subs.push(onSnapshot(collection(db,'rotulos'),s=>{rm=new Map(s.docs.map(d=>[d.id,d.data()]));render()},bad));
 });
@@ -108,7 +110,7 @@ function render(){
   const c2=$('#chips2');c2.textContent='';
   if(usados.length)[['','Todos los rótulos'],...usados.map(n=>[n,n])].forEach(([v,l])=>{const b=el('button','chip rc'+(rt===v?' on':''),l),c=v?colorDe(v)||PAL[0]:'';if(c){b.style.borderColor=c;if(rt===v){b.style.background=c;b.style.color='#fff'}}b.onclick=()=>{rt=v;render()};c2.append(b)});
   const n=norm(q);
-  const ls=items.filter(i=>(!tp||i.tema===tp)&&(!rt||(i.rotulos||[]).includes(rt))&&(!n||norm([i.titulo,i.detalles,i.tema,...(i.rotulos||[]),i.autor].join(' ')).includes(n))).filter(i=>!sf||esFav(i.id)).sort((a,b)=>(esFav(b.id)-esFav(a.id))||(b.fecha||'').localeCompare(a.fecha||''));
+  const ls=items.filter(i=>(!tp||i.tema===tp)&&(!rt||(i.rotulos||[]).includes(rt))&&(!n||norm([i.titulo,i.detalles,i.fuente,i.tema,...(i.rotulos||[]),i.autor].join(' ')).includes(n))).filter(i=>!sf||esFav(i.id)).sort((a,b)=>(esFav(b.id)-esFav(a.id))||(b.fecha||'').localeCompare(a.fecha||''));
   const L=$('#list');L.textContent='';
   if(!ls.length){L.append(el('p','mu',items.length?(sf?'Todavía no marcaste favoritas. Tocá la estrella de una comparación.':'No hay resultados.'):'Todavía no hay nada guardado. Tocá + para agregar la primera.'));return}
   ls.forEach(i=>{const c=el('div','card'),th=el('div','th','🖼'),cb=el('div','cb');
@@ -124,11 +126,11 @@ async function abrir(id){
   const i=items.find(x=>x.id===id);if(!i)return vista('main');
   cur=id;arm=false;$('#d-del').textContent='Borrar';$('#d-ed').hidden=$('#d-del').hidden=!mia(i);
   $('#dh').textContent=i.titulo;$('#dm').textContent=[i.tema,fmt(i.fecha),i.autor&&'por '+i.autor].filter(Boolean).join(' · ');
-  $('#dt').textContent=i.detalles||'';const dr=$('#dr');dr.textContent='';dr.append(badge(i));
+  $('#dt').textContent=i.detalles||'';const ds=$('#ds');ds.textContent='';ds.hidden=!i.fuente;if(i.fuente){ds.append('Fuente: ');linkear(i.fuente).forEach(x=>ds.append(x))}history.replaceState(null,'','#'+id);const dr=$('#dr');dr.textContent='';dr.append(badge(i));
   fvBtn();const im=$('#di');im.hidden=true;vista('det');
   if(i.tieneImg){try{const s=await getDoc(doc(db,'imagenes',id));if(s.exists()&&cur===id){im.src=s.data().data;im.hidden=false}}catch(e){}}
 }
-$('#d-back').onclick=()=>vista('main');
+$('#d-back').onclick=()=>{history.replaceState(null,'',location.pathname);vista('main')};
 $('#d-ed').onclick=()=>form(cur);
 $('#d-fav').onclick=()=>toggleFav(cur);
 $('#d-del').onclick=async()=>{
@@ -136,7 +138,7 @@ $('#d-del').onclick=async()=>{
   try{await deleteDoc(doc(db,'comparaciones',cur));await deleteDoc(doc(db,'imagenes',cur)).catch(()=>{});vista('main')}catch(e){toast('No se pudo borrar')}
 };
 $('#d-sh').onclick=async()=>{
-  const i=items.find(x=>x.id===cur),txt=[i.titulo,[i.tema,fmt(i.fecha)].filter(Boolean).join(' · '),'',i.detalles||''].join('\n').trim();
+  const i=items.find(x=>x.id===cur),txt=[i.titulo,[i.tema,fmt(i.fecha)].filter(Boolean).join(' · '),'',i.detalles||'',i.fuente?'\nFuente: '+i.fuente:'','\n'+location.origin+location.pathname+'#'+i.id].join('\n').trim();
   try{let f=[];if(i.tieneImg){const s=await getDoc(doc(db,'imagenes',cur));if(s.exists())f=[new File([aBlob(s.data().data)],'imagen.jpg',{type:'image/jpeg'})]}
     if(f.length&&navigator.canShare&&navigator.canShare({files:f}))await navigator.share({title:i.titulo,text:txt,files:f});
     else if(navigator.share)await navigator.share({title:i.titulo,text:txt});
@@ -157,7 +159,7 @@ $('#f-r').oninput=e=>{const c=[...rm.values()].find(r=>norm(r.n)===norm(e.target
 async function form(id){
   cur=id||null;pend=null;quitar=false;const i=id?items.find(x=>x.id===id):null;
   $('#fh').textContent=i?'Editar comparación':'Nueva comparación';
-  $('#f-t').value=i?i.titulo:'';$('#f-tm').value=i?i.tema||'':tp;$('#f-d').value=i?i.detalles||'':'';$('#f-f').value=i?i.fecha||hoy():hoy();
+  $('#f-t').value=i?i.titulo:'';$('#f-tm').value=i?i.tema||'':tp;$('#f-d').value=i?i.detalles||'':'';$('#f-s').value=i?i.fuente||'':'';$('#f-f').value=i?i.fecha||hoy():hoy();
   sel=i?(i.rotulos||[]).map(n=>({n,c:colorDe(n)||PAL[0]})):(rt?[{n:rt,c:colorDe(rt)||PAL[0]}]:[]);
   $('#f-r').value='';rc=PAL[0];swatches();rsel();pvShow(i&&i.mini?i.mini:null);vista('frm');
 }
@@ -170,7 +172,7 @@ $('#f-rm').onclick=()=>{pend=null;quitar=true;pvShow(null)};
 $('#f-ok').onclick=async()=>{try{
   agregarR();const t=$('#f-t').value.trim();if(!t){$('#f-t').focus();return}
   const old=cur?items.find(i=>i.id===cur):null,id=old?old.id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  const o={titulo:t,tema:$('#f-tm').value.trim(),detalles:$('#f-d').value.trim(),fecha:$('#f-f').value||hoy(),rotulos:sel.map(r=>r.n),
+  const o={titulo:t,tema:$('#f-tm').value.trim(),detalles:$('#f-d').value.trim(),fuente:$('#f-s').value.trim(),fecha:$('#f-f').value||hoy(),rotulos:sel.map(r=>r.n),
     autorUid:old?old.autorUid:me.uid,autor:old?old.autor:(me.displayName||me.email).split(' ')[0],
     mini:pend?pend.mini:quitar?'':(old&&old.mini)||'',tieneImg:pend?true:quitar?false:!!(old&&old.tieneImg),upd:Date.now()};
   for(const r of sel){const k=rm.get(slug(r.n));if(!k||k.c!==r.c)await setDoc(doc(db,'rotulos',slug(r.n)),{n:r.n,c:r.c})}
@@ -188,5 +190,6 @@ $('#b-f').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)r
       if(im)await setDoc(doc(db,'imagenes',id),{data:im.full,autorUid:me.uid});
       await setDoc(doc(db,'comparaciones',id),{titulo:x.titulo,tema:x.tema||'',detalles:x.detalles||'',fecha:x.fecha||hoy(),rotulos:rs.map(r=>r.n),autorUid:me.uid,autor:(me.displayName||me.email).split(' ')[0],mini:im?im.mini:'',tieneImg:!!im,upd:Date.now()});n++}
     toast(n+' importadas')}catch(x){toast('Ese archivo no es un respaldo de la app')}};
+addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash.slice(1));if(h&&me&&h!==cur&&items.some(i=>i.id===h))abrir(h)});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
