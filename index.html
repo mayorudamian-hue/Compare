@@ -58,8 +58,7 @@ textarea{min-height:140px}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 import{initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,getDoc,onSnapshot,arrayUnion,arrayRemove}from"https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-/* === PEGÁ ACÁ LOS DATOS DE TU PROYECTO FIREBASE (ver LEEME.md) === */
-const CFG={apiKey:"PEGAR",authDomain:"PEGAR",projectId:"PEGAR",appId:"PEGAR"};
+import{CFG}from"./firebase-config.js"; /* tus datos de Firebase viven en firebase-config.js */
 const app=initializeApp(CFG),auth=getAuth(app);
 const db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
 const $=s=>document.querySelector(s),el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
